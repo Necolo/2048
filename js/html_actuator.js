@@ -3,6 +3,7 @@ function HTMLActuator() {
   this.scoreContainer   = document.querySelector(".score-container");
   this.bestContainer    = document.querySelector(".best-container");
   this.messageContainer = document.querySelector(".game-message");
+  this.sharingContainer = document.querySelector(".score-sharing");
 
   this.score = 0;
 }
@@ -37,6 +38,10 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
 
 // Continues the game (both restart and keep playing)
 HTMLActuator.prototype.continue = function () {
+  if (typeof ga !== "undefined") {
+    ga("send", "event", "game", "restart");
+  }
+
   this.clearMessage();
 };
 
@@ -126,14 +131,38 @@ HTMLActuator.prototype.updateBestScore = function (bestScore) {
 
 HTMLActuator.prototype.message = function (won) {
   var type    = won ? "game-won" : "game-over";
-  var message = won ? "You win!" : "Game over!";
+  var message = won ? "You win! ⊂（＿＾ω＾）⊃" : "Game over!";
+
+  if (typeof ga !== "undefined") {
+    ga("send", "event", "game", "end", type, this.score);
+  }
 
   this.messageContainer.classList.add(type);
   this.messageContainer.getElementsByTagName("p")[0].textContent = message;
+
+  this.clearContainer(this.sharingContainer);
+  this.sharingContainer.appendChild(this.scoreTweetButton());
+  twttr.widgets.load();
 };
 
 HTMLActuator.prototype.clearMessage = function () {
   // IE only takes one value to remove at a time.
   this.messageContainer.classList.remove("game-won");
   this.messageContainer.classList.remove("game-over");
+};
+
+HTMLActuator.prototype.scoreTweetButton = function () {
+  var tweet = document.createElement("a");
+  tweet.classList.add("twitter-share-button");
+  tweet.setAttribute("href", "https://twitter.com/share");
+  tweet.setAttribute("data-via", "marumichannel");
+  tweet.setAttribute("data-url", "http://marumichannel.github.io/2048/");
+  tweet.setAttribute("data-counturl", "http://marumichannel.github.io/2048/");
+  tweet.textContent = "Tweet";
+
+  var text = "I scored " + this.score + " points at 井口 2048, a game where you " +
+             "join 井口 to score high! #井口2048";
+  tweet.setAttribute("data-text", text);
+
+  return tweet;
 };
